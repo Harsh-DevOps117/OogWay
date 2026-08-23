@@ -1,0 +1,36 @@
+# Product Requirements Document (PRD) - The Lenny Growth Assistant
+
+## 1. User & Problem
+**User**: Internal product managers, growth engineers, and marketers on the growth team.
+**Problem**: The team frequently needs actionable insights from Lenny's Podcast transcripts. Currently, finding specific advice or formatting it into readable content (like Ship 30 for 30 essays) requires manual searching, reading, and synthesizing, which is slow and breaks their workflow.
+**Solution**: A conversational AI assistant that retrieves transcript data instantly, answers complex questions, and generates formatted artifacts (Markdown/HTML).
+
+## 2. Success Metrics
+- **Retrieval Accuracy**: 95%+ of generated answers successfully cite relevant episodes.
+- **Latency**: Cloud-based queries resolve in under 3 seconds; Local (Ollama) queries under 10 seconds.
+- **Task Completion**: Users can generate a "Ship 30 for 30" essay without needing to manually prompt engineering the LLM.
+
+## 3. Assumptions
+- The database (Supabase) has sufficient capacity and `pgvector` enabled for indexing.
+- The UI frontend (to be built by another team) will handle the rendering of `<artifact>` tags.
+- Transcripts are largely clean markdown without excessive noise.
+- The default local testing environment will use Ollama with a small model (e.g. `llama3` or `phi3`).
+
+## 4. Scope Choices
+**Included**:
+- Core conversational RAG over transcripts.
+- Strict "Ship 30 for 30" skill routing.
+- Artifact extraction logic in the backend.
+- Full API versioning (v1).
+- Model toggling via environment variables.
+
+**Excluded**:
+- Frontend implementation (out of scope for this backend API engagement).
+- User management UI (auth APIs are provided, but no UI).
+- Real-time streaming (SSE/WebSockets). To simplify the initial demo and evaluator experience, responses are synchronous.
+
+## 5. Risks & Trade-offs
+- **Hallucinations**: The LLM might use external knowledge. *Mitigation: Strict system prompts demanding answers ONLY from provided context.*
+- **Local Model Latency**: Running Ollama locally is slow on older hardware. *Trade-off: Allowed for demo purposes, but Cloud (OpenAI/Anthropic) is recommended for production.*
+- **Context Window**: Transcripts are long. We are chunking them to 1000 chars to avoid blowing out context limits and improve search granularity.
+- **Artifact Security**: Generated HTML/CSS might include malicious scripts if rendered unsafely. *Mitigation: The frontend MUST sanitize (e.g., DOMPurify) any HTML before injecting it into the DOM.*
