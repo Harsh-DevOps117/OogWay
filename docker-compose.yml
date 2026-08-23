@@ -3,12 +3,10 @@ version: '3.8'
 services:
   web:
     build: .
-    ports:
-      - "8000:8000"
+    network_mode: "host"
     env_file:
       - app/.env
     volumes:
-      - ./app:/app/app
-      # Mount the episodes directory if needed by the app
-      - ./episodes:/app/episodes
+      - ./app:/app/app:z
+      - ./episodes:/app/episodes:z
     restart: always
