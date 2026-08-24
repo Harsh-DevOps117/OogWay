@@ -32,4 +32,4 @@ class TranscriptChunk(Base):
     id = Column(Integer, primary_key=True, index=True)
     episode_id = Column(String(255), nullable=False, index=True)
     content = Column(Text, nullable=False)
-    embedding = Column(Vector(384), nullable=False) 
+    embedding = Column(Vector(1536), nullable=False) 

@@ -6,14 +6,9 @@ from app.db.connection_db import SessionLocal
 from app.models.chat_model import TranscriptChunk
 from app.core.llm_factory import get_embeddings
 
-def ingest_transcripts(episodes_dir: str = "episodes", max_episodes: int = 10):
+def ingest_transcripts(episodes_dir: str = "episodes"):
     print(f"Starting ingestion from {episodes_dir}...")
     db = SessionLocal()
-
-
-    if db.query(TranscriptChunk).first():
-        print("Database already contains transcript chunks. Skipping ingestion.")
-        return
 
     embeddings = get_embeddings()
 
@@ -24,10 +19,7 @@ def ingest_transcripts(episodes_dir: str = "episodes", max_episodes: int = 10):
         is_separator_regex=False,
     )
 
-
     episode_folders = glob.glob(os.path.join(episodes_dir, "*"))
-
-
 
     count = 0
     for folder in episode_folders:
@@ -44,13 +36,10 @@ def ingest_transcripts(episodes_dir: str = "episodes", max_episodes: int = 10):
             print(f"Processing episode: {episode_id}")
             chunks = text_splitter.create_documents([content])
 
-
             chunk_texts = [chunk.page_content for chunk in chunks]
-
 
             print(f"  Embedding {len(chunk_texts)} chunks...")
             vectors = embeddings.embed_documents(chunk_texts)
-
 
             for idx, chunk_text in enumerate(chunk_texts):
                 db_chunk = TranscriptChunk(
@@ -62,10 +51,6 @@ def ingest_transcripts(episodes_dir: str = "episodes", max_episodes: int = 10):
 
             db.commit()
             count += 1
-
-            if count >= max_episodes:
-                print(f"Reached max limit of {max_episodes} episodes for this ingestion run.")
-                break
 
     print("Ingestion complete!")
     db.close()
