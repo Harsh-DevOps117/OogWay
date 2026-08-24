@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+import json
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy.orm import Session
@@ -59,7 +60,7 @@ def get_session_messages(session_id: int, db: Session = Depends(db_connection), 
                 "role": m.role, 
                 "content": m.content, 
                 "artifacts": m.artifacts,
-                "sources": m.sources 
+                "sources": json.loads(m.sources) if m.sources else None 
             } for m in messages
         ]
     }

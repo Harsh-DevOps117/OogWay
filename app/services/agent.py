@@ -51,11 +51,21 @@ def generate_response(session_id: int, user_query: str, db: Session) -> Dict:
     if not session:
         raise ValueError("Session not found")
 
+    title_updated = False
+    if not session.title or session.title == "New Chat":
+        try:
+            title_prompt = f"Summarize this user query into a concise 3 to 5 word title. Return ONLY the title text, nothing else. Query: {user_query}"
+            title_llm = get_llm()
+            title_response = title_llm.invoke(title_prompt)
+            session.title = title_response.content.strip().strip('"\'')
+            db.commit()
+            title_updated = True
+        except Exception:
+            pass
 
     user_msg = Message(session_id=session_id, role="user", content=user_query)
     db.add(user_msg)
     db.commit()
-
 
     context_str, sources = retrieve_context(user_query, db)
 
@@ -67,10 +77,24 @@ def generate_response(session_id: int, user_query: str, db: Session) -> Dict:
 
 
     llm = get_llm()
+    
+    from langchain_core.messages import AIMessage
+    previous_msgs = db.query(Message).filter(
+        Message.session_id == session_id,
+        Message.id != user_msg.id
+    ).order_by(Message.created_at.asc()).all()
+
     messages = [
-        SystemMessage(content=system_instruction),
-        HumanMessage(content=full_prompt)
+        SystemMessage(content=system_instruction)
     ]
+    
+    for msg in previous_msgs[-6:]:
+        if msg.role == "user":
+            messages.append(HumanMessage(content=msg.content))
+        elif msg.role == "assistant":
+            messages.append(AIMessage(content=msg.content))
+
+    messages.append(HumanMessage(content=full_prompt))
 
 
     response = llm.invoke(messages)
@@ -101,5 +125,6 @@ def generate_response(session_id: int, user_query: str, db: Session) -> Dict:
         "role": ai_msg.role,
         "content": ai_msg.content,
         "artifacts": ai_msg.artifacts,
-        "sources": sources
+        "sources": sources,
+        "session_title": session.title if title_updated else None
     }
