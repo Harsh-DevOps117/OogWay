@@ -31,5 +31,9 @@ class TranscriptChunk(Base):
     __tablename__ = "transcript_chunks"
     id = Column(Integer, primary_key=True, index=True)
     episode_id = Column(String(255), nullable=False, index=True)
+    title = Column(String(255), nullable=True)
+    guest = Column(String(255), nullable=True)
+    youtube_url = Column(String(255), nullable=True)
+    timestamp = Column(String(50), nullable=True)
     content = Column(Text, nullable=False)
-    embedding = Column(Vector(1536), nullable=False) 
+    embedding = Column(Vector(1536), nullable=False)

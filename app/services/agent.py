@@ -36,12 +36,28 @@ def retrieve_context(query: str, db: Session, limit: int = 5) -> tuple[str, List
     ).limit(limit).all()
 
     context_parts = []
-    sources = set()
+    sources_dict = {}
     for row in results:
         context_parts.append(f"[Source: {row.episode_id}]\n{row.content}")
-        sources.add(row.episode_id)
+        
+        if row.episode_id not in sources_dict:
+            sources_dict[row.episode_id] = {
+                "episode_id": row.episode_id,
+                "title": row.title,
+                "guest": row.guest,
+                "youtube_url": row.youtube_url,
+                "timestamps": set()
+            }
+        
+        if row.timestamp:
+            sources_dict[row.episode_id]["timestamps"].add(row.timestamp)
 
-    return "\n\n".join(context_parts), list(sources)
+    final_sources = []
+    for src in sources_dict.values():
+        src["timestamps"] = sorted(list(src["timestamps"]))
+        final_sources.append(src)
+
+    return "\n\n".join(context_parts), final_sources
 
 def generate_response(session_id: int, user_query: str, db: Session) -> Dict:
     """End-to-end agent logic for a given chat query."""
